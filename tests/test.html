@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+
+		<title>Test</title>
+
+		<link href="../node_modules/mocha/mocha.css" rel="stylesheet" />
+		<script src="../node_modules/mocha/mocha.js"></script>
+		<script src="../node_modules/chai/chai.js"></script>
+	</head>
+	<body>
+		<!-- A container element for the visual Mocha results -->
+		<div id="mocha"></div>
+
+		<!-- Mocha setup and initiation code -->
+		<script>
+			mocha.setup("bdd");
+			window.onload = function () {
+				mocha.run();
+			};
+		</script>
+
+		<!-- The script under test -->
+		<script src="../dist/BrowserCryptoProvider.js"></script>
+		<script>
+			const expect = chai.expect;
+
+			const CryptoProvider = BrowserCryptoProvider.CryptoProvider;
+
+			const testPhrase = "The quick brown fox jumps over the lazy dog";
+			describe("--- CryptoProvider ---\n", function () {
+				it("random", function () {
+					const val = CryptoProvider.random();
+					expect(val).gte(0).lte(1);
+				});
+
+				it("encrypt", async function () {
+					const startIV = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12]);
+					const fixed = await CryptoProvider.deterministic32BitVal("fixedPhrase");
+					const incremental = 73;
+					const deterministicIV = CryptoProvider.deterministicIV(startIV, fixed, incremental);
+					const key = await CryptoProvider.loadKeySymmetric(await CryptoProvider.hash("mySecretKey"));
+
+					console.log("ENCRYPT:", deterministicIV, key, testPhrase, await CryptoProvider.hash("mySecretKey"));
+					console.log("RESULT:", await CryptoProvider.encrypt(deterministicIV, key, testPhrase));
+
+					const ciphertext = CryptoProvider.arrayBufferToBase64(await CryptoProvider.encrypt(deterministicIV, key, testPhrase));
+					expect(ciphertext).equal("KQ/Ds8KGw5lFRkDDksKaw6/DmnQNDcKzHUVdOkbDtF/Do23Dt8Okwq3DocK8U8KowprCsMO2EjsgwphYwrXDv8OpwrpuwpNow71WBcKMS8OYOMKdwrUIDgQ=");
+				});
+
+				it("decrypt", async function () {
+					const startIV = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12]);
+					const fixed = await CryptoProvider.deterministic32BitVal("fixedPhrase");
+					const incremental = 73;
+					const deterministicIV = CryptoProvider.deterministicIV(startIV, fixed, incremental);
+					const key = await CryptoProvider.loadKeySymmetric(await CryptoProvider.hash("mySecretKey"));
+					const ciphertext = CryptoProvider.base64ToArrayBuffer(
+						"KQ/Ds8KGw5lFRkDDksKaw6/DmnQNDcKzHUVdOkbDtF/Do23Dt8Okwq3DocK8U8KowprCsMO2EjsgwphYwrXDv8OpwrpuwpNow71WBcKMS8OYOMKdwrUIDgQ="
+					);
+
+					//console.log("DECRYPT:", deterministicIV, key, ciphertext, await CryptoProvider.hash("mySecretKey"));
+
+					const plaintext = await CryptoProvider.decrypt(deterministicIV, key, ciphertext);
+					expect(plaintext).equal(testPhrase);
+				});
+
+				it("hash | SHA-256", async function () {
+					const hash = CryptoProvider.arrayBufferToHex(await CryptoProvider.hash(testPhrase));
+					expect(hash).equal("d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592");
+				});
+
+				it("randomIV", function () {
+					const randomIV = CryptoProvider.randomIV();
+					expect(randomIV.byteLength).equal(CryptoProvider.IV_LEN);
+				});
+
+				it("deterministicIV", async function () {
+					const startIV = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12]);
+					const fixed = await CryptoProvider.deterministic32BitVal("fixedPhrase");
+					const incremental = 73;
+					const deterministicIV = CryptoProvider.arrayBufferToHex(CryptoProvider.deterministicIV(startIV, fixed, incremental));
+					expect(deterministicIV).equal("1f1a7cde4c06070840101112");
+				});
+
+				it("deterministic32BitVal", async function () {
+					const fixedIV = await CryptoProvider.deterministic32BitVal(testPhrase);
+					expect(fixedIV).equal(-1275352873);
+				});
+
+				it("arrayBufferToHex", function () {
+					const hex = CryptoProvider.arrayBufferToHex(new Uint8Array([0x01, 0x02, 0x03, 0x04]));
+					expect(hex).equal("01020304");
+				});
+
+				it("hexToArrayBuffer", function () {
+					const byteArray = new Uint8Array(CryptoProvider.hexToArrayBuffer("01020304"));
+					expect(byteArray[0]).equal(0x01);
+					expect(byteArray[1]).equal(0x02);
+					expect(byteArray[2]).equal(0x03);
+					expect(byteArray[3]).equal(0x04);
+				});
+
+				it("atob", function () {
+					const base64Encoded = btoa(testPhrase);
+					expect(base64Encoded).equal("VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==");
+				});
+
+				it("btoa", function () {
+					const unencoded = atob("VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw");
+					expect(unencoded).equal(testPhrase);
+				});
+			});
+		</script>
+	</body>
+</html>
