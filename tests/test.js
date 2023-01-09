@@ -57,13 +57,12 @@ describe("--- CryptoProvider ---\n", function () {
 		expect(fixedIV).equal(1455622623);
 	});
 
-	/*it("bufferToHex", function () {
+	it("bufferToHex", function () {
 		const hex = CryptoProvider.bufferToHex(new Uint8Array([0x01, 0x02, 0x03, 0x04]));
 		expect(hex).equal("01020304");
 	});
-
-	it("hexToArrayBuffer", function () {
-		const byteArray = CryptoProvider.hexToArrayBuffer("01020304");
+	it("hexToBuffer", function () {
+		const byteArray = CryptoProvider.hexToBuffer("01020304");
 		expect(byteArray[0]).equal(0x01);
 		expect(byteArray[1]).equal(0x02);
 		expect(byteArray[2]).equal(0x03);
@@ -74,9 +73,8 @@ describe("--- CryptoProvider ---\n", function () {
 		const base64Encoded = CryptoProvider.btoa(testPhrase);
 		expect(base64Encoded).equal("VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==");
 	});
-
 	it("btoa", function () {
 		const unencoded = CryptoProvider.atob("VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw");
 		expect(unencoded).equal(testPhrase);
-	});*/
+	});
 });

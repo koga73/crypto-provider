@@ -2,6 +2,7 @@ const crypto = require("crypto");
 
 const REGEX_HEX = /^([a-fA-F0-9][a-fA-F0-9])+$/;
 const REGEX_BASE64 = /^([A-Za-z0-9+\/]{4})*([A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{2}==)?$/;
+
 module.exports = class CryptoProvider {
 	static DEFAULT_ENCODING = "utf8";
 
@@ -59,22 +60,22 @@ module.exports = class CryptoProvider {
 		output = this.TYPE["base64"],
 		input = undefined,
 		encoding = this.DEFAULT_ENCODING,
-		suppressWarnings = false
+		showWarnings = false
 	}) {
 		//Cipher
-		const cipher = this.assembleCipher(algorithm, bits, mode);
+		const cipher = this._assembleCipher(algorithm, bits, mode);
 		//IV
-		iv = this.parseToBuffer(iv, input, suppressWarnings);
-		if (!this.checkIvLen(iv, cipher)) {
+		iv = this._parseToBuffer(iv, input, showWarnings);
+		if (!this._checkIvLen(iv, cipher)) {
 			throw new Error(this.STRINGS.error_invalidIvLen);
 		}
 		//Key
-		key = this.parseToBuffer(key, input, suppressWarnings);
+		key = this._parseToBuffer(key, input, showWarnings);
 		if (key.byteLength * 8 !== bits) {
 			throw new Error(this.STRINGS.error_invalidKeyLen);
 		}
 		//Plaintext
-		plaintext = this.parseToBuffer(plaintext, input, suppressWarnings);
+		plaintext = this._parseToBuffer(plaintext, input, showWarnings);
 		//Output
 		if (!(output in this.TYPE)) {
 			throw new Error(this.STRINGS.error_invalidOutput);
@@ -99,22 +100,22 @@ module.exports = class CryptoProvider {
 		output = this.TYPE["text"],
 		input = undefined,
 		encoding = this.DEFAULT_ENCODING,
-		suppressWarnings = false
+		showWarnings = false
 	}) {
 		//Cipher
-		const cipher = this.assembleCipher(algorithm, bits, mode);
+		const cipher = this._assembleCipher(algorithm, bits, mode);
 		//IV
-		iv = this.parseToBuffer(iv, input, suppressWarnings);
-		if (!this.checkIvLen(iv, cipher)) {
+		iv = this._parseToBuffer(iv, input, showWarnings);
+		if (!this._checkIvLen(iv, cipher)) {
 			throw new Error(this.STRINGS.error_invalidIvLen);
 		}
 		//Key
-		key = this.parseToBuffer(key, input, suppressWarnings);
+		key = this._parseToBuffer(key, input, showWarnings);
 		if (key.byteLength * 8 !== bits) {
 			throw new Error(this.STRINGS.error_invalidKeyLen);
 		}
 		//Ciphertext
-		ciphertext = this.parseToBuffer(ciphertext, input, suppressWarnings);
+		ciphertext = this._parseToBuffer(ciphertext, input, showWarnings);
 		//Output
 		if (!(output in this.TYPE)) {
 			throw new Error(this.STRINGS.error_invalidOutput);
@@ -137,14 +138,14 @@ module.exports = class CryptoProvider {
 		output = this.TYPE["hex"],
 		input = undefined,
 		encoding = this.DEFAULT_ENCODING,
-		suppressWarnings = false
+		showWarnings = false
 	}) {
 		//Value
-		value = this.parseToBuffer(value, input, suppressWarnings);
+		value = this._parseToBuffer(value, input, showWarnings);
 		//Salt
 		salt = salt || null;
 		if (salt) {
-			salt = this.parseToBuffer(salt, input, suppressWarnings);
+			salt = this._parseToBuffer(salt, input, showWarnings);
 		}
 		//Output
 		if (!(output in this.TYPE)) {
@@ -180,9 +181,9 @@ module.exports = class CryptoProvider {
 	//startIV = random byte array of length 12
 	//Fixed numerical value stays same per message
 	//Incremental numerical value that changes per message (sequence number)
-	static deterministicIV({startIV, fixed, incremental, output = this.TYPE["hex"], input = undefined, encoding = this.DEFAULT_ENCODING, suppressWarnings = false}) {
+	static deterministicIV({startIV, fixed, incremental, output = this.TYPE["hex"], input = undefined, encoding = this.DEFAULT_ENCODING, showWarnings = false}) {
 		//startIV
-		startIV = this.parseToBuffer(startIV, input, suppressWarnings);
+		startIV = this._parseToBuffer(startIV, input, showWarnings);
 
 		const nums = [];
 		for (let i = 0; i < startIV.byteLength; i += 4) {
@@ -240,7 +241,7 @@ module.exports = class CryptoProvider {
 		//TODO
 	}
 
-	static assembleCipher(algorithm, bits, mode) {
+	static _assembleCipher(algorithm, bits, mode) {
 		if (!(algorithm in this.SYMMETRIC_ALGORITHM)) {
 			throw new Error(this.STRINGS.error_invalidAlgorithm);
 		}
@@ -253,19 +254,19 @@ module.exports = class CryptoProvider {
 		return `${algorithm}-${bits}-${mode}`;
 	}
 
-	static checkIvLen(iv, cipher) {
+	static _checkIvLen(iv, cipher) {
 		const ivLen = this.IV_LEN[cipher.replace(/^([a-z]+)-([0-9]+)-([a-z]+)$/, "$1_$3")] || -1;
 		return iv.byteLength * 8 === ivLen;
 	}
 
 	//Determine param type and convert to buffer
-	static parseToBuffer(param, knownType, suppressWarnings) {
+	static _parseToBuffer(param, knownType, showWarnings) {
 		param = param || null;
 		if (!param) {
 			throw new Error(this.STRINGS.error_invalidParam);
 		}
 		knownType = knownType || null;
-		suppressWarnings = suppressWarnings === true;
+		showWarnings = showWarnings === true;
 
 		//If we have a buffer return immediately
 		if (Buffer.isBuffer(param)) {
@@ -279,12 +280,12 @@ module.exports = class CryptoProvider {
 			if (typeof param === "string") {
 				if (REGEX_HEX.test(param)) {
 					knownType = this.TYPE["hex"];
-					if (!suppressWarnings) {
+					if (showWarnings) {
 						console.warn(this.STRINGS.warning_assumedHex);
 					}
 				} else if (REGEX_BASE64.test(param)) {
 					knownType = this.TYPE["base64"];
-					if (!suppressWarnings) {
+					if (showWarnings) {
 						console.warn(this.STRINGS.warning_assumedBase64);
 					}
 				} else {

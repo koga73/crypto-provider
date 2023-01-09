@@ -2,11 +2,11 @@
 	"name": "crypto-provider",
 	"version": "0.0.1",
 	"description": "Provides cryptographic operations",
-	"main": "dist/BrowserCryptoProvider.js",
-	"module": "dist/NodeCryptoProvider.js",
+	"browser": "dist/BrowserCryptoProvider.js",
+	"main": "dist/NodeCryptoProvider.js",
 	"scripts": {
 		"build": "npm run build:node && npm run build:browser",
-		"build:node": "cp ./src/NodeCryptoProvider.js ./dist/NodeCryptoProvider.js",
+		"build:node": "copyfiles ./src/NodeCryptoProvider.js ./dist/ -f",
 		"build:browser": "npx babel ./src/BrowserCryptoProvider.js -o ./dist/BrowserCryptoProvider.js",
 		"test": "mocha tests/test.js"
 	},
@@ -20,7 +20,7 @@
 		"aes"
 	],
 	"author": "AJ Savino",
-	"license": "UNLICENSED",
+	"license": "MIT",
 	"bugs": {
 		"url": "https://github.com/koga73/crypto-provider/issues"
 	},
@@ -32,6 +32,7 @@
 		"@babel/plugin-transform-modules-umd": "^7.10.4",
 		"@babel/preset-env": "^7.11.0",
 		"chai": "^4.2.0",
+		"copyfiles": "^2.4.1",
 		"mocha": "^8.1.1"
 	}
 }
